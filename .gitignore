@@ -1,8 +1,7 @@
 train_data_idfc.zip
-Add:
-
 __pycache__/
 *.pyc
 venv
 .DS_Store
-data/train/*
+data/*
+!data/.gitkeep
