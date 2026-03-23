@@ -1,0 +1,20 @@
+{
+  "doc_id": "172946013_2_pg23",
+  "image_name": "172946013_2_pg23.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172946013_2_pg23.png",
+  "dealer_name": "The Odisha Agro Industries Corporation Ltd.",
+  "model_name": "Mahindra yuvo Tech+ 575 DI 4WD model Tractor",
+  "horse_power": 47,
+  "asset_cost": 925039,
+  "sig_present": true,
+  "sig_bbox": [
+    986,
+    1063,
+    1128,
+    1107
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is clear. Signature is present but somewhat faint.",
+  "difficulty": ""
+}

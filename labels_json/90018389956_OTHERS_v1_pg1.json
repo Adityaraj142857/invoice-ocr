@@ -1,0 +1,25 @@
+{
+  "doc_id": "90018389956_OTHERS_v1_pg1",
+  "image_name": "90018389956_OTHERS_v1_pg1.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/90018389956_OTHERS_v1_pg1.png",
+  "dealer_name": "मुकुंदराज ट्रॅक्टर्स",
+  "model_name": "स्वराज ६३० ट्रॅक्टर",
+  "horse_power": 29,
+  "asset_cost": 610000,
+  "sig_present": true,
+  "sig_bbox": [
+    868,
+    1313,
+    952,
+    1355
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    856,
+    1229,
+    987,
+    1397
+  ],
+  "notes": "Image is in Marathi and slightly rotated. Good quality.",
+  "difficulty": ""
+}

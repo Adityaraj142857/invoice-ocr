@@ -1,0 +1,35 @@
+# Invoice OCR — Python dependencies
+# Do NOT install torch from here — let setup.sh / setup.bat handle it
+# so the correct CUDA/MPS variant is chosen.
+
+# ── Core image / PDF ───────────────────────────────────────────────────────
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+pdf2image>=1.16.3
+numpy>=1.24.0
+
+# ── OCR (works on Windows/Linux; auto-disabled on Mac Apple Silicon) ────────
+paddlepaddle>=2.6.0
+paddleocr>=2.7.0
+
+# ── VLM ────────────────────────────────────────────────────────────────────
+# torch and torchvision are installed by setup.sh / setup.bat
+transformers>=4.45.0
+accelerate>=0.26.0
+qwen-vl-utils>=0.0.2
+
+# ── Fuzzy matching ─────────────────────────────────────────────────────────
+rapidfuzz>=3.5.0
+
+# ── Config ─────────────────────────────────────────────────────────────────
+PyYAML>=6.0
+
+# ── Utilities ──────────────────────────────────────────────────────────────
+tqdm>=4.66.0
+huggingface_hub>=0.24.0
+
+# ── Optional (notebooks) ───────────────────────────────────────────────────
+# jupyter
+# matplotlib
+# pandas
+# seaborn

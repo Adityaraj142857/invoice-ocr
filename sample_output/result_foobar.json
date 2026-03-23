@@ -1,0 +1,23 @@
+// Just a Sample output of one file we have to see output of teh other fiel too
+[
+  {
+    "doc_id": "172427893_3_pg11",
+    "fields": {
+      "dealer_name": "Odisha Agro Industries Corporation",
+      "model_name": "Swaraj 744 FE",
+      "horse_power": 48,
+      "asset_cost": 801815,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7908,
+    "processing_time_sec": 84.808,
+    "cost_estimate_usd": 0.0
+  }
+]

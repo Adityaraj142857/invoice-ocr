@@ -1,0 +1,20 @@
+{
+  "doc_id": "172744044_2_pg27",
+  "image_name": "172744044_2_pg27.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172744044_2_pg27.png",
+  "dealer_name": "THE ORISSA AGRO INDUSTRIES CORPORATION LTD.",
+  "model_name": "744 FE 4X4 N1",
+  "horse_power": 48,
+  "asset_cost": 923637,
+  "sig_present": true,
+  "sig_bbox": [
+    990,
+    1231,
+    1147,
+    1314
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is slightly skewed and contains handwritten text.",
+  "difficulty": ""
+}

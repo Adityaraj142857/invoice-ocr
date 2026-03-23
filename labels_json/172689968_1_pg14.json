@@ -1,0 +1,20 @@
+{
+  "doc_id": "172689968_1_pg14",
+  "image_name": "172689968_1_pg14.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172689968_1_pg14.png",
+  "dealer_name": "श्री देव कृषि इंप्लीमेंट्स",
+  "model_name": "NEW HOLLAND MODEL:- 3230 TX",
+  "horse_power": 45,
+  "asset_cost": 820000,
+  "sig_present": true,
+  "sig_bbox": [
+    943,
+    1332,
+    1092,
+    1406
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is clear and readable. Contains both Hindi and English text.",
+  "difficulty": ""
+}

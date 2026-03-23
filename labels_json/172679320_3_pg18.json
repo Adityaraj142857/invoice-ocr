@@ -1,0 +1,20 @@
+{
+  "doc_id": "172679320_3_pg18",
+  "image_name": "172679320_3_pg18.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172679320_3_pg18.png",
+  "dealer_name": "JAY BHAGWATI TRACTORS",
+  "model_name": "STEELTRAC 18",
+  "horse_power": 18,
+  "asset_cost": 373400,
+  "sig_present": true,
+  "sig_bbox": [
+    904,
+    1160,
+    1025,
+    1227
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image quality is good, no rotation, language is English.",
+  "difficulty": ""
+}

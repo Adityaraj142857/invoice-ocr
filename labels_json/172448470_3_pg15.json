@@ -1,0 +1,20 @@
+{
+  "doc_id": "172448470_3_pg15",
+  "image_name": "172448470_3_pg15.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172448470_3_pg15.png",
+  "dealer_name": "THE ORISSA AGRO INDUSTRIES CORPORATION LTD.",
+  "model_name": "Kubota MU 5502 4WD",
+  "horse_power": null,
+  "asset_cost": 1106506,
+  "sig_present": true,
+  "sig_bbox": [
+    947,
+    1200,
+    1131,
+    1256
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Horse power value not found in the document.",
+  "difficulty": ""
+}

@@ -1,0 +1,57 @@
+# Invoice OCR Pipeline Configuration
+# Works on Mac (Apple Silicon + Intel) and Windows automatically
+
+# ── Model ──────────────────────────────────────────────────────────────────
+vlm:
+  model_id: "Qwen/Qwen2-VL-2B-Instruct"
+  device: "auto"        # auto = CUDA → MPS → CPU (detected at runtime)
+  dtype: "auto"         # auto = float16 on GPU/MPS, float32 on CPU
+  max_new_tokens: 256
+  run_verification: false
+  fallback_on_failure: true
+
+# ── OCR ────────────────────────────────────────────────────────────────────
+ocr:
+  enabled: "auto"             # auto = disabled on Mac ARM, enabled on Windows/Linux
+  confidence_threshold: 0.3
+  multi_lang: ["en", "hi"]
+
+# ── Preprocessing ──────────────────────────────────────────────────────────
+preprocessing:
+  max_dim: 2048
+  min_dim: 800
+  deskew_enabled: true
+  denoise_enabled: true
+  clahe_enabled: true
+  binarise_enabled: true
+
+# ── Detection ──────────────────────────────────────────────────────────────
+detection:
+  stamp:
+    search_region_fraction: 0.55
+    min_contour_area: 2000
+    min_ink_density: 0.08
+  signature:
+    search_above_px: 180
+    min_contour_count: 2
+    fallback_region_fraction: 0.45
+
+# ── Matching ───────────────────────────────────────────────────────────────
+matching:
+  dealer_threshold: 80.0
+  model_threshold: 85.0
+  master_dir: "master_data"
+
+# ── Paths ──────────────────────────────────────────────────────────────────
+paths:
+  input_dir: "data/train_docs"
+  output_file: "sample_output/result.json"
+
+# ── Ingestion ──────────────────────────────────────────────────────────────
+ingestion:
+  dpi: 200
+  supported_extensions: [".pdf", ".png", ".jpg", ".jpeg", ".tiff"]
+
+# ── Cost ───────────────────────────────────────────────────────────────────
+cost:
+  cost_per_document_usd: 0.0

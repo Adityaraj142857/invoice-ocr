@@ -1,0 +1,20 @@
+{
+  "doc_id": "172655019_3_pg11",
+  "image_name": "172655019_3_pg11.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172655019_3_pg11.png",
+  "dealer_name": "शुभ विनायक ट्रैक्टर्स",
+  "model_name": "3630 TX PLUS",
+  "horse_power": 55,
+  "asset_cost": 950000,
+  "sig_present": true,
+  "sig_bbox": [
+    796,
+    1281,
+    996,
+    1324
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is in Hindi. Multiple tractor models are checked, but only one price is listed. Assumed '3630 TX PLUS' (55 HP) as the quoted model due to it being one of the checked items with a clear integer HP and highest HP among checked options.",
+  "difficulty": ""
+}

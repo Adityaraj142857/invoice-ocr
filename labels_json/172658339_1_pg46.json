@@ -1,0 +1,20 @@
+{
+  "doc_id": "172658339_1_pg46",
+  "image_name": "172658339_1_pg46.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172658339_1_pg46.png",
+  "dealer_name": "M/s. HIREMATH TRACTORS",
+  "model_name": "EICHER - 557 - an [50HP]",
+  "horse_power": 50,
+  "asset_cost": 950000,
+  "sig_present": true,
+  "sig_bbox": [
+    877,
+    1343,
+    1019,
+    1404
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image quality is good, text is clear.",
+  "difficulty": ""
+}

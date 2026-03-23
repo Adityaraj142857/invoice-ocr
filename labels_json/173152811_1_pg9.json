@@ -1,0 +1,20 @@
+{
+  "doc_id": "173152811_1_pg9",
+  "image_name": "173152811_1_pg9.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/173152811_1_pg9.png",
+  "dealer_name": "S. D. Trading Corporation",
+  "model_name": "Farmtrac DCPS",
+  "horse_power": 38,
+  "asset_cost": 590000,
+  "sig_present": true,
+  "sig_bbox": [
+    672,
+    809,
+    807,
+    882
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is slightly rotated clockwise and has fair quality. Text is in English.",
+  "difficulty": ""
+}

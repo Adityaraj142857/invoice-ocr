@@ -1,0 +1,20 @@
+{
+  "doc_id": "90019031024_1_v2_pg1",
+  "image_name": "90019031024_1_v2_pg1.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/90019031024_1_v2_pg1.png",
+  "dealer_name": "KISAN FARM MACHINERY",
+  "model_name": "DI RX60:- Sonalika DLX TP 2WD",
+  "horse_power": 50,
+  "asset_cost": 930000,
+  "sig_present": true,
+  "sig_bbox": [
+    1612,
+    1967,
+    1818,
+    2088
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is slightly rotated and has some glare, but text is legible.",
+  "difficulty": ""
+}

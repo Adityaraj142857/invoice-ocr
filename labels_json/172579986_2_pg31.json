@@ -1,0 +1,20 @@
+{
+  "doc_id": "172579986_2_pg31",
+  "image_name": "172579986_2_pg31.png",
+  "image_path": "/Users/arshukla/Documents/Projects/invoice-ocr/notebooks/auto_labeler/label_data/172579986_2_pg31.png",
+  "dealer_name": "THE ORISSA AGRO INDUSTRIES CORPORATION LTD.",
+  "model_name": "Swaraj 744 FET 4X4",
+  "horse_power": 48,
+  "asset_cost": 933754,
+  "sig_present": true,
+  "sig_bbox": [
+    780,
+    1404,
+    951,
+    1468
+  ],
+  "stamp_present": false,
+  "stamp_bbox": null,
+  "notes": "Image is slightly rotated. Some handwritten text is faint.",
+  "difficulty": ""
+}
