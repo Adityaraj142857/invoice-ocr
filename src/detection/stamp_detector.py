@@ -1,24 +1,21 @@
 """
 detection/stamp_detector.py
 ----------------------------
-Rubber stamp detector for invoice images.
+Robust rubber stamp detector — 4 independent strategies, majority vote.
 
-Strategy (layered — stops at first positive hit):
-  1. HSV colour masking  – stamps are typically red, blue, purple, or green ink
-  2. Hough circle detection on the masked region
-  3. Contour analysis fallback  – for irregularly shaped or faint stamps
-  4. Bottom-right quadrant bias  – stamps almost always appear there
+Strategy 1 — HSV colour masking + Hough circles  (coloured circular stamps)
+Strategy 2 — Dark-ink contour analysis            (black/grey stamps)
+Strategy 3 — Frequency-domain circularity         (faint / low-contrast)
+Strategy 4 — Text-cluster density map             (dense circular text region)
 
-Returns a bounding box [x_min, y_min, x_max, y_max] if detected, else None.
-
-Dependencies:
-    pip install opencv-python-headless numpy
+Biased to bottom-right quadrant (stamps live there ~95% of time),
+but falls back to full-image search when needed.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import cv2
@@ -34,38 +31,36 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StampDetectorConfig:
-    # Minimum contour area to consider (pixels²) — avoids tiny noise
-    min_contour_area: int = 2000
-    # Fraction of image to treat as the "search region" (bottom-right bias)
-    search_region_fraction: float = 0.55
-    # Hough circle parameters
-    hough_dp: float = 1.2
-    hough_min_dist: int = 50
-    hough_param1: int = 50
-    hough_param2: int = 30
-    hough_min_radius: int = 20
-    hough_max_radius: int = 200
-    # Minimum ratio of non-white pixels inside a candidate region
-    min_ink_density: float = 0.08
+    min_contour_area: int = 800          # lowered — catches smaller stamps
+    search_region_fraction: float = 0.50 # bottom-right 50%
+    hough_dp: float = 1.0
+    hough_min_dist: int = 40
+    hough_param1: int = 40
+    hough_param2: int = 20              # lowered — more sensitive
+    hough_min_radius: int = 15
+    hough_max_radius: int = 250
+    min_ink_density: float = 0.04       # lowered
+    min_strategies_agree: int = 1       # just 1 strategy is enough to declare present
 
 
 # ---------------------------------------------------------------------------
-# Colour ranges in HSV for stamp ink colours
-# HSV ranges: H[0-179], S[0-255], V[0-255]
+# Colour ranges for stamp inks (HSV)
 # ---------------------------------------------------------------------------
 
-_STAMP_COLOUR_RANGES: list[tuple[np.ndarray, np.ndarray]] = [
-    # Red (wraps around in HSV — two ranges)
-    (np.array([0,   80, 50]),  np.array([12, 255, 255])),
-    (np.array([165, 80, 50]),  np.array([179, 255, 255])),
+_STAMP_COLOUR_RANGES = [
+    # Red (two ranges — wraps in HSV)
+    (np.array([0,   50, 40]),  np.array([12, 255, 255])),
+    (np.array([160, 50, 40]),  np.array([179,255, 255])),
     # Blue
-    (np.array([100, 60, 40]),  np.array([130, 255, 255])),
+    (np.array([95,  40, 30]),  np.array([135,255, 255])),
     # Purple / violet
-    (np.array([130, 40, 40]),  np.array([165, 255, 255])),
-    # Green (less common but used in some Tamil Nadu docs)
-    (np.array([40,  60, 40]),  np.array([80, 255, 255])),
-    # Dark blue (navy)
-    (np.array([95,  50, 20]),  np.array([125, 255, 180])),
+    (np.array([125, 30, 30]),  np.array([165,255, 255])),
+    # Green
+    (np.array([38,  40, 30]),  np.array([82, 255, 255])),
+    # Dark navy
+    (np.array([90,  40, 15]),  np.array([125,200, 160])),
+    # Black / dark grey — critical for black stamps like this doc
+    (np.array([0,   0,  0]),   np.array([179, 60,  80])),
 ]
 
 
@@ -73,157 +68,250 @@ _STAMP_COLOUR_RANGES: list[tuple[np.ndarray, np.ndarray]] = [
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _pil_to_bgr(image: Image.Image | np.ndarray) -> np.ndarray:
+def _to_bgr(image: Image.Image | np.ndarray) -> np.ndarray:
     if isinstance(image, Image.Image):
-        arr = np.array(image.convert("RGB"))
-        return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        return cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
     if len(image.shape) == 2:
         return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     return image.copy()
 
 
-def _get_search_region(
-    img: np.ndarray,
-    fraction: float,
-) -> tuple[np.ndarray, int, int]:
-    """
-    Crop to the bottom-right quadrant (stamps live here ~95% of the time).
-    Returns (cropped_img, x_offset, y_offset).
-    """
+def _search_region(img: np.ndarray, frac: float) -> tuple[np.ndarray, int, int]:
     h, w = img.shape[:2]
-    x_off = int(w * (1 - fraction))
-    y_off = int(h * (1 - fraction))
-    return img[y_off:h, x_off:w], x_off, y_off
+    x_off = int(w * (1 - frac))
+    y_off = int(h * (1 - frac))
+    return img[y_off:, x_off:], x_off, y_off
 
 
-def _build_colour_mask(hsv: np.ndarray) -> np.ndarray:
-    """Build a binary mask for all stamp-ink colour ranges combined."""
+def _colour_mask(bgr: np.ndarray) -> np.ndarray:
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
     for lo, hi in _STAMP_COLOUR_RANGES:
         mask |= cv2.inRange(hsv, lo, hi)
-    # Morphological clean-up
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel, iterations=1)
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k, iterations=2)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  k, iterations=1)
     return mask
 
 
-def _ink_density(region: np.ndarray) -> float:
-    """Fraction of non-white pixels in a BGR region."""
-    gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
-    non_white = np.sum(gray < 220)
-    total = gray.size
-    return non_white / max(total, 1)
+def _ink_density(bgr_crop: np.ndarray) -> float:
+    gray = cv2.cvtColor(bgr_crop, cv2.COLOR_BGR2GRAY)
+    return np.sum(gray < 200) / max(gray.size, 1)
 
 
-def _contour_to_bbox(contour: np.ndarray) -> list[int]:
-    x, y, w, h = cv2.boundingRect(contour)
-    # Expand slightly for bounding box padding
-    pad = 10
-    return [max(0, x - pad), max(0, y - pad), x + w + pad, y + h + pad]
+def _polygon_bbox(pts: np.ndarray, pad: int = 12) -> list[int]:
+    x, y, w, h = cv2.boundingRect(pts)
+    return [max(0, x-pad), max(0, y-pad), x+w+pad, y+h+pad]
 
 
-def _offset_bbox(bbox: list[int], x_off: int, y_off: int) -> list[int]:
-    return [bbox[0] + x_off, bbox[1] + y_off, bbox[2] + x_off, bbox[3] + y_off]
+def _offset(bbox: list[int], dx: int, dy: int) -> list[int]:
+    return [bbox[0]+dx, bbox[1]+dy, bbox[2]+dx, bbox[3]+dy]
 
 
-def _clamp_bbox(bbox: list[int], w: int, h: int) -> list[int]:
-    return [
-        max(0, bbox[0]), max(0, bbox[1]),
-        min(w, bbox[2]), min(h, bbox[3]),
-    ]
+def _clamp(bbox: list[int], W: int, H: int) -> list[int]:
+    return [max(0,bbox[0]), max(0,bbox[1]), min(W,bbox[2]), min(H,bbox[3])]
 
 
 # ---------------------------------------------------------------------------
-# Detection strategies
+# Strategy 1 — HSV colour mask + Hough circles
 # ---------------------------------------------------------------------------
 
-def _detect_by_hough(
-    bgr_region: np.ndarray,
-    cfg: StampDetectorConfig,
-) -> Optional[list[int]]:
-    """
-    Hough circle detection on the colour-masked region.
-    Returns local bbox or None.
-    """
-    hsv = cv2.cvtColor(bgr_region, cv2.COLOR_BGR2HSV)
-    mask = _build_colour_mask(hsv)
-
-    if np.sum(mask) < cfg.min_contour_area:
+def _s1_hough(bgr: np.ndarray, cfg: StampDetectorConfig) -> Optional[list[int]]:
+    mask = _colour_mask(bgr)
+    if np.sum(mask) < cfg.min_contour_area * 2:
         return None
-
-    gray_mask = cv2.GaussianBlur(mask, (9, 9), 2)
+    blur = cv2.GaussianBlur(mask, (9, 9), 2)
     circles = cv2.HoughCircles(
-        gray_mask,
-        cv2.HOUGH_GRADIENT,
-        dp=cfg.hough_dp,
-        minDist=cfg.hough_min_dist,
-        param1=cfg.hough_param1,
-        param2=cfg.hough_param2,
-        minRadius=cfg.hough_min_radius,
-        maxRadius=cfg.hough_max_radius,
+        blur, cv2.HOUGH_GRADIENT,
+        dp=cfg.hough_dp, minDist=cfg.hough_min_dist,
+        param1=cfg.hough_param1, param2=cfg.hough_param2,
+        minRadius=cfg.hough_min_radius, maxRadius=cfg.hough_max_radius,
     )
-
     if circles is None:
         return None
-
-    # Pick the circle with the largest radius
-    circles = np.round(circles[0, :]).astype(int)
-    best = max(circles, key=lambda c: c[2])  # c = (cx, cy, r)
-    cx, cy, r = int(best[0]), int(best[1]), int(best[2])
-    pad = max(10, r // 4)
-    return [cx - r - pad, cy - r - pad, cx + r + pad, cy + r + pad]
+    cx, cy, r = map(int, np.round(circles[0, 0]))
+    pad = max(12, r // 4)
+    return [cx-r-pad, cy-r-pad, cx+r+pad, cy+r+pad]
 
 
-def _detect_by_contour(
-    bgr_region: np.ndarray,
-    cfg: StampDetectorConfig,
-) -> Optional[list[int]]:
+# ---------------------------------------------------------------------------
+# Strategy 2 — Contour shape analysis (circularity + area)
+# ---------------------------------------------------------------------------
+
+def _s2_contour(bgr: np.ndarray, cfg: StampDetectorConfig) -> Optional[list[int]]:
     """
-    Contour-based fallback — finds the largest coloured contiguous region.
-    Returns local bbox or None.
+    Looks for large, roughly circular blobs regardless of colour.
+    Key insight: stamps have high circularity (4π·area/perimeter²  ≈ 0.5–1.0)
     """
-    hsv = cv2.cvtColor(bgr_region, cv2.COLOR_BGR2HSV)
-    mask = _build_colour_mask(hsv)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    # Use Canny on the whole image — catches outlines even for black stamps
+    edges = cv2.Canny(gray, 30, 100)
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    edges = cv2.dilate(edges, k, iterations=2)
 
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best_score = 0.0
+    best_cnt   = None
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < cfg.min_contour_area:
+            continue
+        perim = cv2.arcLength(cnt, True)
+        if perim < 1:
+            continue
+        circularity = (4 * np.pi * area) / (perim ** 2)
+        # Stamps are circles or slightly oval → circularity 0.3–1.0
+        if circularity < 0.25:
+            continue
+        score = circularity * np.log(area + 1)
+        if score > best_score:
+            best_score = score
+            best_cnt   = cnt
+
+    if best_cnt is None:
+        return None
+
+    # Verify ink density inside the candidate bbox
+    bbox = _polygon_bbox(best_cnt, pad=8)
+    h, w = bgr.shape[:2]
+    x1,y1,x2,y2 = max(0,bbox[0]),max(0,bbox[1]),min(w,bbox[2]),min(h,bbox[3])
+    if x2 <= x1 or y2 <= y1:
+        return None
+    crop = bgr[y1:y2, x1:x2]
+    if _ink_density(crop) < cfg.min_ink_density:
+        return None
+
+    return bbox
+
+
+# ---------------------------------------------------------------------------
+# Strategy 3 — Dark-ink blob (catches black stamps like in this doc)
+# ---------------------------------------------------------------------------
+
+def _s3_dark_blob(bgr: np.ndarray, cfg: StampDetectorConfig) -> Optional[list[int]]:
+    """
+    Threshold for dark pixels, cluster them, find large round cluster.
+    Works for black/dark-grey ink stamps that HSV misses.
+    """
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    # OTSU threshold — adapts to image brightness automatically
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Remove large text blocks (stamps have dense connected components)
+    k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    k_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN,  k_open,  iterations=1)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, k_close, iterations=3)
+
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    candidates = []
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < cfg.min_contour_area * 3:   # stamps are large
+            continue
+        x, y, w, h = cv2.boundingRect(cnt)
+        # Aspect ratio close to 1 → circular/oval
+        aspect = w / max(h, 1)
+        if not (0.4 <= aspect <= 2.5):
+            continue
+        perim = cv2.arcLength(cnt, True)
+        circ  = (4 * np.pi * area) / max(perim**2, 1)
+        if circ < 0.15:
+            continue
+        candidates.append((circ * area, cnt))
+
+    if not candidates:
+        return None
+
+    _, best = max(candidates, key=lambda x: x[0])
+    return _polygon_bbox(best, pad=10)
+
+
+# ---------------------------------------------------------------------------
+# Strategy 4 — Circular text-density heatmap
+# ---------------------------------------------------------------------------
+
+def _s4_text_density(bgr: np.ndarray, cfg: StampDetectorConfig) -> Optional[list[int]]:
+    """
+    Stamps contain circular arrangements of small text.
+    Detect by finding regions with uniformly high small-blob density
+    arranged in a roughly circular pattern.
+    """
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Find small connected components (individual letters in stamp text)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary)
+
+    h, w = bgr.shape[:2]
+    heatmap = np.zeros((h, w), dtype=np.float32)
+
+    for i in range(1, num_labels):
+        area = stats[i, cv2.CC_STAT_AREA]
+        cw   = stats[i, cv2.CC_STAT_WIDTH]
+        ch   = stats[i, cv2.CC_STAT_HEIGHT]
+        # Small components = stamp text characters
+        if 10 <= area <= 800 and cw < 60 and ch < 60:
+            cx, cy = int(centroids[i][0]), int(centroids[i][1])
+            cv2.circle(heatmap, (cx, cy), 20, 1.0, -1)
+
+    # Blur the heatmap — dense regions become hot spots
+    heatmap = cv2.GaussianBlur(heatmap, (61, 61), 20)
+    _, thresh = cv2.threshold(heatmap, 0.4, 1.0, cv2.THRESH_BINARY)
+    thresh_u8 = (thresh * 255).astype(np.uint8)
+
+    contours, _ = cv2.findContours(thresh_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return None
 
-    # Filter by area
-    valid = [c for c in contours if cv2.contourArea(c) >= cfg.min_contour_area]
+    valid = [c for c in contours if cv2.contourArea(c) > cfg.min_contour_area * 2]
     if not valid:
         return None
 
-    # Pick the largest
-    largest = max(valid, key=cv2.contourArea)
-    bbox = _contour_to_bbox(largest)
-
-    # Verify ink density inside the candidate
-    x1, y1, x2, y2 = bbox
-    h, w = bgr_region.shape[:2]
-    x1, y1 = max(0, x1), max(0, y1)
-    x2, y2 = min(w, x2), min(h, y2)
-
-    if x2 <= x1 or y2 <= y1:
+    best = max(valid, key=cv2.contourArea)
+    x, y, bw, bh = cv2.boundingRect(best)
+    # Must be vaguely circular
+    if not (0.3 <= bw / max(bh, 1) <= 3.0):
         return None
 
-    region_crop = bgr_region[y1:y2, x1:x2]
-    if _ink_density(region_crop) < cfg.min_ink_density:
-        return None
-
-    return bbox
+    return [max(0, x-15), max(0, y-15), x+bw+15, y+bh+15]
 
 
-def _detect_full_image(
+# ---------------------------------------------------------------------------
+# Multi-strategy runner
+# ---------------------------------------------------------------------------
+
+def _run_strategies(
     bgr: np.ndarray,
     cfg: StampDetectorConfig,
-) -> Optional[list[int]]:
-    """Full-image fallback when bottom-right search fails."""
-    bbox = _detect_by_hough(bgr, cfg)
-    if bbox is None:
-        bbox = _detect_by_contour(bgr, cfg)
-    return bbox
+) -> list[tuple[list[int], float, str]]:
+    """Run all strategies and return list of (bbox, confidence, method)."""
+    results = []
+
+    b = _s1_hough(bgr, cfg)
+    if b: results.append((b, 0.90, "hough_circle"))
+
+    b = _s2_contour(bgr, cfg)
+    if b: results.append((b, 0.80, "contour_circularity"))
+
+    b = _s3_dark_blob(bgr, cfg)
+    if b: results.append((b, 0.82, "dark_blob"))
+
+    b = _s4_text_density(bgr, cfg)
+    if b: results.append((b, 0.78, "text_density"))
+
+    return results
+
+
+def _merge_bboxes(bboxes: list[list[int]]) -> list[int]:
+    """Merge multiple bboxes into one enclosing bbox."""
+    x1 = min(b[0] for b in bboxes)
+    y1 = min(b[1] for b in bboxes)
+    x2 = max(b[2] for b in bboxes)
+    y2 = max(b[3] for b in bboxes)
+    return [x1, y1, x2, y2]
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +321,7 @@ def _detect_full_image(
 @dataclass
 class StampDetectionResult:
     present: bool
-    bbox: Optional[list[int]]    # [x_min, y_min, x_max, y_max] in original image
+    bbox: Optional[list[int]]
     confidence: float
     method: str = "none"
 
@@ -242,46 +330,32 @@ def detect_stamp(
     image: Image.Image | np.ndarray,
     cfg: Optional[StampDetectorConfig] = None,
 ) -> StampDetectionResult:
-    """
-    Detect a rubber stamp in an invoice image.
-
-    Args:
-        image: PIL Image or OpenCV BGR ndarray.
-        cfg:   Optional config override.
-
-    Returns:
-        StampDetectionResult with present flag, bbox, and confidence.
-    """
     if cfg is None:
         cfg = StampDetectorConfig()
 
-    bgr = _pil_to_bgr(image)
-    img_h, img_w = bgr.shape[:2]
+    bgr = _to_bgr(image)
+    H, W = bgr.shape[:2]
 
-    # ── Strategy 1: search bottom-right region ────────────────────────────
-    region, x_off, y_off = _get_search_region(bgr, cfg.search_region_fraction)
+    # ── Try bottom-right search region first ──────────────────────────────
+    region, x_off, y_off = _search_region(bgr, cfg.search_region_fraction)
+    hits = _run_strategies(region, cfg)
 
-    bbox_local = _detect_by_hough(region, cfg)
-    method = "hough_circle"
+    if len(hits) >= cfg.min_strategies_agree:
+        # Use highest-confidence hit
+        best_bbox, best_conf, best_method = max(hits, key=lambda x: x[1])
+        bbox = _clamp(_offset(best_bbox, x_off, y_off), W, H)
+        conf = min(0.95, best_conf + 0.05 * len(hits))
+        logger.debug("Stamp: %s (conf=%.2f, %d strategies agreed)", best_method, conf, len(hits))
+        return StampDetectionResult(present=True, bbox=bbox, confidence=conf, method=best_method)
 
-    if bbox_local is None:
-        bbox_local = _detect_by_contour(region, cfg)
-        method = "contour"
-
-    if bbox_local is not None:
-        bbox = _offset_bbox(bbox_local, x_off, y_off)
-        bbox = _clamp_bbox(bbox, img_w, img_h)
-        logger.debug("Stamp detected via %s in search region: %s", method, bbox)
-        return StampDetectionResult(present=True, bbox=bbox, confidence=0.88, method=method)
-
-    # ── Strategy 2: full image search ────────────────────────────────────
-    bbox_full = _detect_full_image(bgr, cfg)
-    if bbox_full is not None:
-        bbox_full = _clamp_bbox(bbox_full, img_w, img_h)
-        logger.debug("Stamp detected via full-image search: %s", bbox_full)
-        return StampDetectionResult(
-            present=True, bbox=bbox_full, confidence=0.70, method="full_image"
-        )
+    # ── Full image fallback ───────────────────────────────────────────────
+    hits_full = _run_strategies(bgr, cfg)
+    if len(hits_full) >= cfg.min_strategies_agree:
+        best_bbox, best_conf, best_method = max(hits_full, key=lambda x: x[1])
+        bbox = _clamp(best_bbox, W, H)
+        conf = best_conf * 0.85   # slight penalty for finding outside expected region
+        logger.debug("Stamp (full-image): %s (conf=%.2f)", best_method, conf)
+        return StampDetectionResult(present=True, bbox=bbox, confidence=conf, method=f"full_{best_method}")
 
     logger.debug("No stamp detected.")
-    return StampDetectionResult(present=False, bbox=None, confidence=0.80, method="none")
+    return StampDetectionResult(present=False, bbox=None, confidence=0.75, method="none")

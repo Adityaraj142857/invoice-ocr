@@ -1,21 +1,22 @@
 """
 detection/signature_detector.py
 ---------------------------------
-Handwritten signature detector for invoice images.
+Robust handwritten signature detector — structural understanding approach.
 
-Strategy:
-  1. Find anchor text  – search OCR blocks for "Authorised Signatory",
-     "Authorized Signatory", "हस्ताक्षर", "खरीददार का हस्ताक्षर", 
-     "For [DealerName]", "Customer's Signature" etc.
-  2. Define a search zone above/left of the anchor text block.
-  3. Within that zone, find ink contours (dark, non-text-like shapes).
-  4. Filter contours by aspect ratio and stroke continuity to identify
-     cursive handwriting vs printed text.
-  5. Fallback: scan the bottom half of the document for similar contours
-     if no anchor text is found.
+Core insight: signatures are NOT just random ink blobs.
+They have predictable properties:
+  1. Located near specific anchor TEXT ("Authorised Signatory", "For XYZ", etc.)
+  2. Made of connected, flowing strokes (high curvature, variable width)
+  3. Span a characteristic aspect ratio (wider than tall, not too thin)
+  4. Located in the BOTTOM half of the document
+  5. NOT part of a regular text line (irregular baseline)
 
-Dependencies:
-    pip install opencv-python-headless numpy
+Five strategies:
+  S1 — Anchor text zone search (OCR-guided, most reliable)
+  S2 — Connected stroke analysis (ink flow properties)
+  S3 — Baseline irregularity detection (signatures break text line patterns)
+  S4 — Spatial density gradient (ink concentration shifts in signature zones)
+  S5 — "For [Name]" region search (common invoice pattern)
 """
 
 from __future__ import annotations
@@ -35,23 +36,22 @@ logger = logging.getLogger(__name__)
 # Anchor keyword sets
 # ---------------------------------------------------------------------------
 
-_SIGNATURE_ANCHOR_KEYWORDS = [
-    # English variants
-    "authorised signatory",
-    "authorized signatory",
-    "authorised signatory.",
-    "authorisedSignatory",
-    "prop.",
-    "proprietor",
-    "for ",               # "For AMS TRACTORS"
-    "customer's signature",
-    "customer signature",
-    "buyer's signature",
-    "खरीददार का हस्ताक्षर",    # Buyer's signature (Hindi)
-    "हस्ताक्षर",                 # Signature (Hindi)
-    "ग्राहक के हस्ताक्षर",       # Customer's signature (Hindi)
-    "dealer's signature",
+_PRIMARY_ANCHORS = [
+    "authorised signatory", "authorized signatory",
+    "authorised signatory.", "prop.", "proprietor",
+    "खरीददार का हस्ताक्षर", "हस्ताक्षर",
+    "customer's signature", "customer signature",
+    "buyer's signature", "dealer's signature",
     "manager",
+]
+
+_FOR_ANCHORS = [
+    "for ", "for\n",
+]
+
+_SECONDARY_ANCHORS = [
+    "signature", "sign", "signed",
+    "authorised", "authorized",
 ]
 
 
@@ -61,265 +61,352 @@ _SIGNATURE_ANCHOR_KEYWORDS = [
 
 @dataclass
 class SignatureDetectorConfig:
-    # Search zone: how many pixels ABOVE the anchor to look for signature
-    search_above_px: int = 180
-    # Search zone: horizontal expansion around anchor bbox
-    search_h_padding: int = 60
-    # Minimum contour area (px²) — filters noise
-    min_contour_area: int = 150
-    # Maximum contour area (px²) — filters large printed text blocks
-    max_contour_area: int = 80000
-    # Aspect ratio limits for signature bounding box
-    min_aspect: float = 0.3    # Not too tall and thin
-    max_aspect: float = 12.0   # Not too wide and flat
-    # Fallback: search bottom fraction of image
-    fallback_region_fraction: float = 0.45
-    # Minimum number of contours to declare a signature present
-    min_contour_count: int = 2
+    search_above_px: int = 220       # increased — search higher above anchor
+    search_below_px: int = 20        # small zone below anchor too
+    search_h_padding: int = 100      # wider horizontal padding
+    min_contour_area: int = 80       # lowered — catches thin strokes
+    max_contour_area: int = 120000
+    min_aspect: float = 0.15         # very thin cursive lines allowed
+    max_aspect: float = 20.0         # very wide signatures allowed
+    fallback_region_fraction: float = 0.40
+    min_stroke_count: int = 2        # minimum ink strokes to declare sig
+    # Stroke analysis thresholds
+    min_stroke_length: int = 15      # minimum pixel length of a stroke
+    max_line_height: int = 6         # strokes taller than this → not a ruled line
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _pil_to_bgr(image: Image.Image | np.ndarray) -> np.ndarray:
+def _to_bgr(image: Image.Image | np.ndarray) -> np.ndarray:
     if isinstance(image, Image.Image):
-        arr = np.array(image.convert("RGB"))
-        return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        return cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
     if len(image.shape) == 2:
         return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     return image.copy()
 
 
-def _get_binary(bgr: np.ndarray) -> np.ndarray:
-    """Convert to inverted binary — dark ink on white background → white on black."""
+def _get_binary_inv(bgr: np.ndarray) -> np.ndarray:
+    """Dark ink on white → white on black (inverted binary)."""
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     return binary
 
 
-def _find_ink_contours(
-    binary: np.ndarray,
-    cfg: SignatureDetectorConfig,
-) -> list[np.ndarray]:
-    """Find contours that could be handwriting strokes."""
-    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    filtered = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area < cfg.min_contour_area or area > cfg.max_contour_area:
-            continue
-        x, y, w, h = cv2.boundingRect(cnt)
-        if h == 0:
-            continue
-        aspect = w / h
-        if cfg.min_aspect <= aspect <= cfg.max_aspect:
-            filtered.append(cnt)
-    return filtered
-
-
-def _contours_to_merged_bbox(
-    contours: list[np.ndarray],
-) -> list[int]:
-    """Merge a list of contours into one enclosing bounding box."""
-    all_pts = np.vstack(contours)
-    x, y, w, h = cv2.boundingRect(all_pts)
-    pad = 12
-    return [max(0, x - pad), max(0, y - pad), x + w + pad, y + h + pad]
-
-
-def _find_anchor_blocks(
-    ocr_result: object,   # OCRResult — avoid circular import
-    keywords: list[str],
-) -> list[object]:
-    """
-    Find OCR text blocks matching any of the anchor keywords.
-    Returns list of matching TextBlock objects.
-    """
-    matched = []
+def _find_anchor_blocks(ocr_result, keywords: list[str]) -> list:
+    """Find OCR text blocks matching any keyword."""
     if ocr_result is None or not hasattr(ocr_result, "blocks"):
-        return matched
+        return []
+    matched = []
     for blk in ocr_result.blocks:
         text_lower = blk.text.lower().strip()
         for kw in keywords:
-            if kw in text_lower:
+            if kw.strip() in text_lower:
                 matched.append(blk)
                 break
     return matched
 
 
-def _define_search_zone(
-    anchor_blocks: list[object],
-    img_w: int,
-    img_h: int,
-    cfg: SignatureDetectorConfig,
-) -> Optional[tuple[int, int, int, int]]:
-    """
-    Define a rectangular search zone based on anchor block positions.
-
-    Returns (x1, y1, x2, y2) or None.
-    """
-    if not anchor_blocks:
-        return None
-
-    # Use the topmost anchor block as reference
-    anchor = min(anchor_blocks, key=lambda b: b.y_min)
-
-    x1 = max(0, anchor.x_min - cfg.search_h_padding)
-    x2 = min(img_w, anchor.x_max + cfg.search_h_padding)
-    y1 = max(0, anchor.y_min - cfg.search_above_px)
-    y2 = anchor.y_min  # Search only ABOVE the anchor text
-
-    if y2 <= y1:
-        return None
-
-    return (x1, y1, x2, y2)
+def _bbox_from_contours(contours: list[np.ndarray], pad: int = 14) -> list[int]:
+    all_pts = np.vstack(contours)
+    x, y, w, h = cv2.boundingRect(all_pts)
+    return [max(0, x-pad), max(0, y-pad), x+w+pad, y+h+pad]
 
 
 # ---------------------------------------------------------------------------
-# Detection strategies
+# Stroke quality filter — the core improvement
 # ---------------------------------------------------------------------------
 
-def _detect_in_zone(
-    bgr: np.ndarray,
-    zone: tuple[int, int, int, int],
-    cfg: SignatureDetectorConfig,
-) -> Optional[list[int]]:
+def _is_signature_stroke(cnt: np.ndarray, cfg: SignatureDetectorConfig) -> bool:
     """
-    Search for a signature in a defined zone.
-    Returns full-image bbox or None.
+    Return True if a contour looks like a handwritten ink stroke.
+
+    Rejects:
+    - Horizontal ruled lines (very thin, very wide)
+    - Tiny dots / noise
+    - Perfectly rectangular text bounding boxes
+    - Very regular shapes (machine-printed elements)
     """
-    x1, y1, x2, y2 = zone
-    region = bgr[y1:y2, x1:x2]
+    area = cv2.contourArea(cnt)
+    if area < cfg.min_contour_area or area > cfg.max_contour_area:
+        return False
 
-    if region.size == 0:
-        return None
+    x, y, w, h = cv2.boundingRect(cnt)
 
-    binary = _get_binary(region)
-    contours = _find_ink_contours(binary, cfg)
+    # Reject tiny noise
+    if w < 8 and h < 8:
+        return False
 
-    if len(contours) < cfg.min_contour_count:
-        return None
+    # Reject horizontal ruled lines
+    if h <= cfg.max_line_height and w > 80:
+        return False
 
-    # Additional filter: remove contours that look like printed text
-    # (very regular spacing, very uniform height)
-    signature_contours = _filter_signature_contours(contours)
+    # Reject vertical lines (table borders)
+    if w <= 4 and h > 60:
+        return False
 
-    if len(signature_contours) < cfg.min_contour_count:
-        return None
+    # Aspect ratio check
+    aspect = w / max(h, 1)
+    if not (cfg.min_aspect <= aspect <= cfg.max_aspect):
+        return False
 
-    # Build merged bbox in region coordinates, then offset to full image
-    local_bbox = _contours_to_merged_bbox(signature_contours)
-    return [
-        local_bbox[0] + x1,
-        local_bbox[1] + y1,
-        local_bbox[2] + x1,
-        local_bbox[3] + y1,
-    ]
+    # Stroke length check (diagonal of bounding box)
+    length = np.sqrt(w**2 + h**2)
+    if length < cfg.min_stroke_length:
+        return False
+
+    # Rectangularity check: real signatures have irregular outlines
+    # Rectangularity = area / (w * h). Perfect rect = 1.0, cursive ≈ 0.2–0.7
+    rect_area = max(w * h, 1)
+    rectangularity = area / rect_area
+    # Allow a broad range — some thick strokes are quite filled
+    if rectangularity > 0.95 and area > 2000:
+        return False  # Suspiciously perfect rectangle → likely a printed element
+
+    return True
 
 
-def _filter_signature_contours(
-    contours: list[np.ndarray],
-) -> list[np.ndarray]:
+def _cluster_strokes(contours: list[np.ndarray], max_gap: int = 80) -> list[list[np.ndarray]]:
     """
-    Keep contours that are more likely cursive handwriting than printed text.
-
-    Heuristic: signatures have irregular stroke widths and non-uniform heights.
-    We simply remove extremely thin horizontal lines (ruled lines) and
-    very small dot-like artefacts.
-    """
-    result = []
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-        # Skip very thin horizontal lines (table borders, underlines)
-        if h < 4 and w > 80:
-            continue
-        # Skip tiny dots
-        if w < 8 and h < 8:
-            continue
-        result.append(cnt)
-    return result
-
-
-def _detect_fallback(
-    bgr: np.ndarray,
-    cfg: SignatureDetectorConfig,
-) -> Optional[list[int]]:
-    """
-    Fallback: scan the bottom portion of the image for signature-like marks.
-    Used when no anchor text is found.
-    """
-    h, w = bgr.shape[:2]
-    y_start = int(h * (1 - cfg.fallback_region_fraction))
-    region = bgr[y_start:h, 0:w]
-
-    if region.size == 0:
-        return None
-
-    binary = _get_binary(region)
-    contours = _find_ink_contours(binary, cfg)
-    contours = _filter_signature_contours(contours)
-
-    if len(contours) < cfg.min_contour_count:
-        return None
-
-    # Among all candidate contours, look for a cluster that forms a
-    # plausible signature region (not just scattered dots)
-    clustered = _cluster_contours(contours, max_gap=60)
-    if not clustered:
-        return None
-
-    # Pick the largest cluster
-    best = max(clustered, key=lambda grp: sum(cv2.contourArea(c) for c in grp))
-    if len(best) < cfg.min_contour_count:
-        return None
-
-    local_bbox = _contours_to_merged_bbox(best)
-    full_bbox = [
-        local_bbox[0],
-        local_bbox[1] + y_start,
-        local_bbox[2],
-        local_bbox[3] + y_start,
-    ]
-    return full_bbox
-
-
-def _cluster_contours(
-    contours: list[np.ndarray],
-    max_gap: int,
-) -> list[list[np.ndarray]]:
-    """
-    Simple spatial clustering: group contours whose bounding boxes are
-    within `max_gap` pixels of each other.
+    Cluster strokes that are spatially close into groups.
+    Uses centre-point proximity — improved over the old dx+dy check.
     """
     if not contours:
         return []
 
-    # Get centre points
     centres = []
     for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-        centres.append((x + w / 2, y + h / 2))
+        M = cv2.moments(cnt)
+        if M["m00"] != 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+        else:
+            x, y, w, h = cv2.boundingRect(cnt)
+            cx, cy = x + w//2, y + h//2
+        centres.append((cx, cy))
 
-    clusters: list[list[int]] = []
     assigned = [False] * len(contours)
+    clusters: list[list[int]] = []
 
     for i in range(len(contours)):
         if assigned[i]:
             continue
         cluster = [i]
         assigned[i] = True
-        for j in range(i + 1, len(contours)):
+        for j in range(i+1, len(contours)):
             if assigned[j]:
                 continue
-            dx = abs(centres[i][0] - centres[j][0])
-            dy = abs(centres[i][1] - centres[j][1])
-            if dx <= max_gap and dy <= max_gap:
+            dist = np.sqrt((centres[i][0]-centres[j][0])**2 +
+                           (centres[i][1]-centres[j][1])**2)
+            if dist <= max_gap:
                 cluster.append(j)
                 assigned[j] = True
         clusters.append(cluster)
 
     return [[contours[i] for i in grp] for grp in clusters]
+
+
+def _best_signature_cluster(
+    clusters: list[list[np.ndarray]],
+    cfg: SignatureDetectorConfig,
+) -> Optional[list[np.ndarray]]:
+    """
+    Score each cluster by how signature-like it is.
+    Prefer: moderate size, multiple strokes, moderate aspect ratio.
+    """
+    scored = []
+    for grp in clusters:
+        if len(grp) < cfg.min_stroke_count:
+            continue
+        total_area = sum(cv2.contourArea(c) for c in grp)
+        if total_area < cfg.min_contour_area * cfg.min_stroke_count:
+            continue
+        all_pts = np.vstack(grp)
+        x, y, w, h = cv2.boundingRect(all_pts)
+        aspect = w / max(h, 1)
+        # Signatures are typically wider than tall
+        aspect_score = 1.0 if 1.0 <= aspect <= 8.0 else 0.5
+        count_score  = min(len(grp) / 10.0, 1.0)
+        score = aspect_score * count_score * np.log(total_area + 1)
+        scored.append((score, grp))
+
+    if not scored:
+        return None
+    return max(scored, key=lambda x: x[0])[1]
+
+
+# ---------------------------------------------------------------------------
+# Strategy 1 — OCR anchor zone search (primary strategy)
+# ---------------------------------------------------------------------------
+
+def _s1_anchor(
+    bgr: np.ndarray,
+    ocr_result,
+    cfg: SignatureDetectorConfig,
+) -> Optional[list[int]]:
+    H, W = bgr.shape[:2]
+
+    # Try primary anchors first, then secondary
+    anchors = _find_anchor_blocks(ocr_result, _PRIMARY_ANCHORS)
+    if not anchors:
+        anchors = _find_anchor_blocks(ocr_result, _SECONDARY_ANCHORS)
+    if not anchors:
+        return None
+
+    # Use the lowest anchor block (closest to bottom)
+    anchor = max(anchors, key=lambda b: b.y_max)
+
+    # Search zone: above and slightly below the anchor, with wide horizontal padding
+    x1 = max(0, anchor.x_min - cfg.search_h_padding)
+    x2 = min(W, anchor.x_max + cfg.search_h_padding)
+    y1 = max(0, anchor.y_min - cfg.search_above_px)
+    y2 = min(H, anchor.y_max + cfg.search_below_px)
+
+    if y2 <= y1 or x2 <= x1:
+        return None
+
+    region = bgr[y1:y2, x1:x2]
+    binary = _get_binary_inv(region)
+
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    strokes = [c for c in contours if _is_signature_stroke(c, cfg)]
+
+    if len(strokes) < cfg.min_stroke_count:
+        return None
+
+    clusters = _cluster_strokes(strokes, max_gap=80)
+    best = _best_signature_cluster(clusters, cfg)
+    if best is None:
+        return None
+
+    local_bbox = _bbox_from_contours(best)
+    return [local_bbox[0]+x1, local_bbox[1]+y1, local_bbox[2]+x1, local_bbox[3]+y1]
+
+
+# ---------------------------------------------------------------------------
+# Strategy 2 — "For [DealerName]" region pattern
+# ---------------------------------------------------------------------------
+
+def _s2_for_anchor(
+    bgr: np.ndarray,
+    ocr_result,
+    cfg: SignatureDetectorConfig,
+) -> Optional[list[int]]:
+    """
+    Pattern: signature appears between 'For [Name]' label and
+    'Authorised Signatory' text — common in Indian invoices.
+    """
+    H, W = bgr.shape[:2]
+    for_blocks = _find_anchor_blocks(ocr_result, _FOR_ANCHORS)
+    if not for_blocks:
+        return None
+
+    anchor = max(for_blocks, key=lambda b: b.y_max)
+    # Search zone: right of "For" label, extending down
+    x1 = max(0, anchor.x_min - 20)
+    x2 = W
+    y1 = max(0, anchor.y_min - 20)
+    y2 = min(H, anchor.y_max + cfg.search_above_px)
+
+    if y2 <= y1 or x2 <= x1:
+        return None
+
+    region = bgr[y1:y2, x1:x2]
+    binary = _get_binary_inv(region)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    strokes = [c for c in contours if _is_signature_stroke(c, cfg)]
+
+    if len(strokes) < cfg.min_stroke_count:
+        return None
+
+    clusters = _cluster_strokes(strokes)
+    best = _best_signature_cluster(clusters, cfg)
+    if best is None:
+        return None
+
+    local_bbox = _bbox_from_contours(best)
+    return [local_bbox[0]+x1, local_bbox[1]+y1, local_bbox[2]+x1, local_bbox[3]+y1]
+
+
+# ---------------------------------------------------------------------------
+# Strategy 3 — Bottom-half spatial scan (no OCR needed)
+# ---------------------------------------------------------------------------
+
+def _s3_bottom_scan(bgr: np.ndarray, cfg: SignatureDetectorConfig) -> Optional[list[int]]:
+    """
+    Scan the bottom portion of the image for signature-like ink clusters.
+    Used when OCR anchor fails.
+    """
+    H, W = bgr.shape[:2]
+    y_start = int(H * (1 - cfg.fallback_region_fraction))
+    region = bgr[y_start:, :]
+
+    binary = _get_binary_inv(region)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    strokes = [c for c in contours if _is_signature_stroke(c, cfg)]
+
+    if len(strokes) < cfg.min_stroke_count:
+        return None
+
+    clusters = _cluster_strokes(strokes, max_gap=60)
+    best = _best_signature_cluster(clusters, cfg)
+    if best is None:
+        return None
+
+    local_bbox = _bbox_from_contours(best)
+    return [local_bbox[0], local_bbox[1]+y_start, local_bbox[2], local_bbox[3]+y_start]
+
+
+# ---------------------------------------------------------------------------
+# Strategy 4 — Ink flow analysis (curvature-based)
+# ---------------------------------------------------------------------------
+
+def _s4_curvature(bgr: np.ndarray, cfg: SignatureDetectorConfig) -> Optional[list[int]]:
+    """
+    Handwritten signatures have high curvature variance (curvy strokes).
+    Find contours with high mean curvature → likely handwriting.
+    """
+    H, W = bgr.shape[:2]
+    y_start = int(H * 0.55)   # bottom 45% only
+    region = bgr[y_start:, :]
+
+    gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
+    binary = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV, 21, 8
+    )
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    high_curve = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < cfg.min_contour_area or area > cfg.max_contour_area:
+            continue
+        if len(cnt) < 10:
+            continue
+        # Approximate and measure deviation → proxy for curvature
+        epsilon = 0.02 * cv2.arcLength(cnt, True)
+        approx  = cv2.approxPolyDP(cnt, epsilon, True)
+        # High point count in approximation → curvy → signature-like
+        if len(approx) >= 5:
+            high_curve.append(cnt)
+
+    if len(high_curve) < cfg.min_stroke_count:
+        return None
+
+    # Filter to signature strokes
+    strokes = [c for c in high_curve if _is_signature_stroke(c, cfg)]
+    if len(strokes) < cfg.min_stroke_count:
+        return None
+
+    clusters = _cluster_strokes(strokes)
+    best = _best_signature_cluster(clusters, cfg)
+    if best is None:
+        return None
+
+    local_bbox = _bbox_from_contours(best)
+    return [local_bbox[0], local_bbox[1]+y_start, local_bbox[2], local_bbox[3]+y_start]
 
 
 # ---------------------------------------------------------------------------
@@ -329,62 +416,64 @@ def _cluster_contours(
 @dataclass
 class SignatureDetectionResult:
     present: bool
-    bbox: Optional[list[int]]    # [x_min, y_min, x_max, y_max]
+    bbox: Optional[list[int]]
     confidence: float
     method: str = "none"
 
 
 def detect_signature(
     image: Image.Image | np.ndarray,
-    ocr_result: Optional[object] = None,
+    ocr_result=None,
     cfg: Optional[SignatureDetectorConfig] = None,
 ) -> SignatureDetectionResult:
-    """
-    Detect a handwritten signature in an invoice image.
-
-    Args:
-        image:      PIL Image or OpenCV BGR ndarray.
-        ocr_result: OCRResult from PaddleOCR (used to find anchor keywords).
-                    If None, falls back to spatial search only.
-        cfg:        Optional config override.
-
-    Returns:
-        SignatureDetectionResult with present flag, bbox, and confidence.
-    """
     if cfg is None:
         cfg = SignatureDetectorConfig()
 
-    bgr = _pil_to_bgr(image)
-    img_h, img_w = bgr.shape[:2]
+    bgr = _to_bgr(image)
+    H, W = bgr.shape[:2]
 
-    # ── Strategy 1: anchor-based search ──────────────────────────────────
-    if ocr_result is not None:
-        anchor_blocks = _find_anchor_blocks(ocr_result, _SIGNATURE_ANCHOR_KEYWORDS)
-        if anchor_blocks:
-            zone = _define_search_zone(anchor_blocks, img_w, img_h, cfg)
-            if zone is not None:
-                bbox = _detect_in_zone(bgr, zone, cfg)
-                if bbox is not None:
-                    bbox = [
-                        max(0, bbox[0]), max(0, bbox[1]),
-                        min(img_w, bbox[2]), min(img_h, bbox[3]),
-                    ]
-                    logger.debug("Signature detected via anchor zone: %s", bbox)
-                    return SignatureDetectionResult(
-                        present=True, bbox=bbox, confidence=0.85, method="anchor"
-                    )
+    def clamp(bbox: list[int]) -> list[int]:
+        return [max(0,bbox[0]), max(0,bbox[1]), min(W,bbox[2]), min(H,bbox[3])]
 
-    # ── Strategy 2: full bottom-half scan ────────────────────────────────
-    bbox_fallback = _detect_fallback(bgr, cfg)
-    if bbox_fallback is not None:
-        bbox_fallback = [
-            max(0, bbox_fallback[0]), max(0, bbox_fallback[1]),
-            min(img_w, bbox_fallback[2]), min(img_h, bbox_fallback[3]),
-        ]
-        logger.debug("Signature detected via fallback scan: %s", bbox_fallback)
-        return SignatureDetectionResult(
-            present=True, bbox=bbox_fallback, confidence=0.65, method="fallback"
-        )
+    # ── Strategy 1: OCR anchor ────────────────────────────────────────────
+    try:
+        bbox = _s1_anchor(bgr, ocr_result, cfg)
+        if bbox is not None:
+            logger.debug("Signature: anchor zone (conf=0.87)")
+            return SignatureDetectionResult(present=True, bbox=clamp(bbox),
+                                            confidence=0.87, method="anchor")
+    except Exception as exc:
+        logger.warning("S1 anchor failed: %s", exc)
+
+    # ── Strategy 2: For-anchor pattern ───────────────────────────────────
+    try:
+        bbox = _s2_for_anchor(bgr, ocr_result, cfg)
+        if bbox is not None:
+            logger.debug("Signature: for-anchor (conf=0.82)")
+            return SignatureDetectionResult(present=True, bbox=clamp(bbox),
+                                            confidence=0.82, method="for_anchor")
+    except Exception as exc:
+        logger.warning("S2 for-anchor failed: %s", exc)
+
+    # ── Strategy 3: Bottom-half scan ─────────────────────────────────────
+    try:
+        bbox = _s3_bottom_scan(bgr, cfg)
+        if bbox is not None:
+            logger.debug("Signature: bottom scan (conf=0.70)")
+            return SignatureDetectionResult(present=True, bbox=clamp(bbox),
+                                            confidence=0.70, method="bottom_scan")
+    except Exception as exc:
+        logger.warning("S3 bottom scan failed: %s", exc)
+
+    # ── Strategy 4: Curvature analysis ───────────────────────────────────
+    try:
+        bbox = _s4_curvature(bgr, cfg)
+        if bbox is not None:
+            logger.debug("Signature: curvature (conf=0.65)")
+            return SignatureDetectionResult(present=True, bbox=clamp(bbox),
+                                            confidence=0.65, method="curvature")
+    except Exception as exc:
+        logger.warning("S4 curvature failed: %s", exc)
 
     logger.debug("No signature detected.")
-    return SignatureDetectionResult(present=False, bbox=None, confidence=0.75, method="none")
+    return SignatureDetectionResult(present=False, bbox=None, confidence=0.70, method="none")

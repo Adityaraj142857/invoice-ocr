@@ -9,7 +9,7 @@ End-to-end field extraction from Indian tractor loan quotation PDFs.
 
 ### Mac / Linux
 ```bash
-git clone <your-repo-url>
+git clone 'https://github.com/Adityaraj142857/invoice-ocr.git'
 cd invoice-ocr
 bash setup.sh
 source venv/bin/activate
@@ -18,7 +18,7 @@ python executable.py --input data/train_docs/ --output sample_output/result.json
 
 ### Windows
 ```bat
-git clone <your-repo-url>
+git clone 'https://github.com/Adityaraj142857/invoice-ocr.git'
 cd invoice-ocr
 setup.bat
 venv\Scripts\activate

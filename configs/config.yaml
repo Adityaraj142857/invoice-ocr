@@ -28,13 +28,17 @@ preprocessing:
 # ── Detection ──────────────────────────────────────────────────────────────
 detection:
   stamp:
-    search_region_fraction: 0.55
-    min_contour_area: 2000
-    min_ink_density: 0.08
+    search_region_fraction: 0.50    # bottom-right 50%
+    min_contour_area: 800           # lowered — catches smaller stamps
+    min_ink_density: 0.04           # lowered — catches faint stamps
+    hough_param2: 20                # lowered — more sensitive circle detection
+    min_strategies_agree: 1         # 1 of 4 strategies firing = stamp present
   signature:
-    search_above_px: 180
-    min_contour_count: 2
-    fallback_region_fraction: 0.45
+    search_above_px: 220            # pixels above anchor to search
+    search_h_padding: 100           # horizontal padding around anchor
+    min_contour_area: 80            # minimum stroke area
+    min_stroke_count: 2             # minimum strokes to declare signature
+    fallback_region_fraction: 0.40  # bottom 40% for fallback scan
 
 # ── Matching ───────────────────────────────────────────────────────────────
 matching:

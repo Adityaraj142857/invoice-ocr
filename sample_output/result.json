@@ -1,0 +1,92 @@
+[
+  {
+    "doc_id": "172427893_3_pg11",
+    "fields": {
+      "dealer_name": "Odisha Agro Industries Corporation",
+      "model_name": "Swaraj 744 FE",
+      "horse_power": 48,
+      "asset_cost": 801815,
+      "signature": {
+        "present": true,
+        "bbox": [
+          855,
+          1489,
+          1009,
+          1563
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          729,
+          1286,
+          991,
+          1548
+        ]
+      }
+    },
+    "confidence": 0.8542,
+    "processing_time_sec": 67.697,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172679320_3_pg18",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "ADICO ESCORTS STEELTRAC 18",
+      "horse_power": 18,
+      "asset_cost": 373400,
+      "signature": {
+        "present": true,
+        "bbox": [
+          1122,
+          1002,
+          1174,
+          1038
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          892,
+          884,
+          1178,
+          1170
+        ]
+      }
+    },
+    "confidence": 0.8542,
+    "processing_time_sec": 30.447,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172804164_1_pg14",
+    "fields": {
+      "dealer_name": "M/S SHRI PARASNATH ENTERPRISES",
+      "model_name": "Mahindra 575 DI",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          48,
+          890,
+          161,
+          975
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          863,
+          1141,
+          954,
+          1182
+        ]
+      }
+    },
+    "confidence": 0.8458,
+    "processing_time_sec": 36.808,
+    "cost_estimate_usd": 0.0
+  }
+]
