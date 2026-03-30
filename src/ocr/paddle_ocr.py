@@ -111,12 +111,14 @@ _ocr_engines: dict[str, object] = {}
 
 def _build_engine(lang: str, use_angle_cls: bool) -> object:
     try:
-        from paddleocr import PaddleOCR
+        #from paddleocr import PaddleOCR
+        from paddleocr import PaddleOCRVL
+        pipeline = PaddleOCRVL(pipeline_version="v1")
     except ImportError as exc:
         raise ImportError("Run: pip install paddlepaddle paddleocr") from exc
 
     import inspect
-    sig = inspect.signature(PaddleOCR.__init__)
+    sig = inspect.signature(PaddleOCRVL.__init__)
     accepted = set(sig.parameters.keys())
 
     kwargs: dict = {"lang": lang, "use_angle_cls": use_angle_cls}
@@ -131,10 +133,10 @@ def _build_engine(lang: str, use_angle_cls: bool) -> object:
         kwargs["device"] = "cpu"
 
     try:
-        return PaddleOCR(**kwargs)
+        return PaddleOCRVL(**kwargs)
     except TypeError:
         logger.warning("PaddleOCR full-kwargs init failed, retrying minimal.")
-        return PaddleOCR(lang=lang)
+        return PaddleOCRVL(lang=lang)
 
 
 def _get_engine(lang: str = "en", use_angle_cls: bool = True) -> object:

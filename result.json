@@ -16,6 +16,1146 @@
       }
     },
     "confidence": 0.7908,
+    "processing_time_sec": 182.553,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172448470_3_pg15",
+    "fields": {
+      "dealer_name": "Odisha Agro Industries Corporation",
+      "model_name": "Power Tiller",
+      "horse_power": 11106506,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7242,
+    "processing_time_sec": 113.347,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172561841_pg1",
+    "fields": {
+      "dealer_name": "DhenaKanal",
+      "model_name": "DhenaKanal",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          820,
+          1250,
+          1087,
+          1502
+        ]
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.795,
+    "processing_time_sec": 94.138,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172566189_1_pg10",
+    "fields": {
+      "dealer_name": "SONALIKA LEADING AGRI EVOLUTION",
+      "model_name": "SRI AMUTHAM TRACTORS",
+      "horse_power": 1200000,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7242,
+    "processing_time_sec": 101.632,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172571502_1_pg21",
+    "fields": {
+      "dealer_name": "Maan Tractor Co",
+      "model_name": "Mahindra 575 DI",
+      "horse_power": 575,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          254,
+          1227,
+          438,
+          1323
+        ]
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7617,
+    "processing_time_sec": 67.664,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019597614_1_v2_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          995,
+          1336,
+          1139,
+          1480
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 26.562,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019597614_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "NEW HOLLAND FORD TRACTOR MODEL 3630DTY HP 55",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          936,
+          1317,
+          1190,
+          1581
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 7.746,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019603202_1_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 742000,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          878,
+          143,
+          1060,
+          326
+        ]
+      }
+    },
+    "confidence": 0.7583,
+    "processing_time_sec": 7.005,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019603825_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          977,
+          1451,
+          1093,
+          1567
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 6.547,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019604068_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "M.S. DASHMESH AUTOMOBILES",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 742,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          824,
+          1274,
+          1054,
+          1504
+        ]
+      }
+    },
+    "confidence": 0.7733,
+    "processing_time_sec": 6.916,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019604664_3_v1_pg1",
+    "fields": {
+      "dealer_name": "BALAJI AUTOMOTIVES",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          986,
+          1352,
+          1190,
+          1568
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 6.755,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019613512_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "MK Motors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          1216,
+          1603,
+          1412,
+          1799
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 7.024,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019616205_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          0,
+          4379,
+          4176,
+          5927
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          2972,
+          5458,
+          3464,
+          5950
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 8.851,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019616535_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "DASHMESH AUTOMOBILES",
+      "model_name": "DASHMESH AUTOMOBILES",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          819,
+          1253,
+          1055,
+          1489
+        ]
+      }
+    },
+    "confidence": 0.8067,
+    "processing_time_sec": 6.88,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019622433_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": null,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          63,
+          960,
+          180,
+          1051
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          840,
+          1367,
+          1064,
+          1591
+        ]
+      }
+    },
+    "confidence": 0.6217,
+    "processing_time_sec": 6.468,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019624424_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "BALAL BORWELLS",
+      "model_name": "BALAL BORWELLS",
+      "horse_power": null,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.6083,
+    "processing_time_sec": 6.6,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019631438_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "Swaraj",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 742,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          839,
+          1316,
+          1079,
+          1556
+        ]
+      }
+    },
+    "confidence": 0.7733,
+    "processing_time_sec": 6.472,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019632629_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "SONALIKA",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          782,
+          1257,
+          962,
+          1437
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 6.492,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019634938_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "MK Motors",
+      "model_name": "ESCORT/FARMTRAC TRACTOR",
+      "horse_power": 45,
+      "asset_cost": 560000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          1311,
+          1745,
+          1535,
+          1950
+        ]
+      }
+    },
+    "confidence": 0.8133,
+    "processing_time_sec": 7.322,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019655984_3_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "YUVO TECH PLUS",
+      "horse_power": 450000,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          563,
+          899,
+          1025,
+          1361
+        ]
+      }
+    },
+    "confidence": 0.7567,
+    "processing_time_sec": 6.972,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019661354_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          157,
+          796,
+          274,
+          879
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          526,
+          1169,
+          998,
+          1440
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 6.793,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019664623_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "Kubota Escorts",
+      "model_name": "Farmtrac Champion 35",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          788,
+          1274,
+          1012,
+          1455
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          783,
+          1271,
+          1009,
+          1497
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 6.333,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019665101_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "MK Motors",
+      "model_name": "ESCORT/FARMTRAC TRACTORS",
+      "horse_power": 45,
+      "asset_cost": 630000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          847,
+          1217,
+          999,
+          1355
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          828,
+          1200,
+          982,
+          1354
+        ]
+      }
+    },
+    "confidence": 0.7967,
+    "processing_time_sec": 6.282,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019675571_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          0,
+          926,
+          1191,
+          1679
+        ]
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.8117,
+    "processing_time_sec": 6.746,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019675571_OTHERS_v2_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": null,
+      "asset_cost": null,
+      "signature": {
+        "present": true,
+        "bbox": [
+          0,
+          926,
+          1191,
+          1679
+        ]
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.4167,
+    "processing_time_sec": 6.179,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019676275_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "GURUKUPA TRUCKS",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          775,
+          1150,
+          1185,
+          1560
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 6.693,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019681429_1_v1_pg1",
+    "fields": {
+      "dealer_name": "Maan Tractor Co",
+      "model_name": "NEW HOLLAND FARMING INDIAN TRACTOR COMPANY",
+      "horse_power": null,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          667,
+          1670,
+          881,
+          1818
+        ]
+      }
+    },
+    "confidence": 0.6217,
+    "processing_time_sec": 7.689,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019705325_1_v1_pg1",
+    "fields": {
+      "dealer_name": "M/s. Sukhwah Farm Services",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": null,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          864,
+          1365,
+          1014,
+          1499
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          863,
+          1397,
+          931,
+          1465
+        ]
+      }
+    },
+    "confidence": 0.6217,
+    "processing_time_sec": 6.426,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019712041_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "M/s. DASHMESH AUTOMOBILES",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 700000,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          842,
+          1317,
+          1064,
+          1539
+        ]
+      }
+    },
+    "confidence": 0.7733,
+    "processing_time_sec": 10.715,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019712591_1_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          917,
+          1386,
+          1075,
+          1493
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          1032,
+          1393,
+          1136,
+          1497
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 8.196,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019714854_6_v1_pg1",
+    "fields": {
+      "dealer_name": "Maan Tractor Co",
+      "model_name": "SAPNA TRACTOR",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          404,
+          945,
+          507,
+          1010
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          779,
+          1315,
+          993,
+          1529
+        ]
+      }
+    },
+    "confidence": 0.8275,
+    "processing_time_sec": 73.377,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019715731_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "SUNILVA",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          2642,
+          4018,
+          3138,
+          4514
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 8.671,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019716976_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "Chandra Agencies",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": null,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          1698,
+          2043,
+          2108,
+          2453
+        ]
+      }
+    },
+    "confidence": 0.6383,
+    "processing_time_sec": 7.449,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019729306_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "IDRC FIRST BANK LTD",
+      "model_name": "NEW HOLLAND 3230 TX 8.8A 4HP",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          161,
+          1208,
+          277,
+          1310
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          576,
+          1272,
+          1072,
+          1684
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 7.228,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019735954_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "Mundel Trade Private Limited",
+      "model_name": "MF-245 DI SMART SERIES 50HP",
+      "horse_power": 50,
+      "asset_cost": 580000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          1025,
+          1781,
+          1135,
+          1886
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          410,
+          0,
+          704,
+          238
+        ]
+      }
+    },
+    "confidence": 0.8292,
+    "processing_time_sec": 7.651,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019738914_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          0,
+          1527,
+          296,
+          1827
+        ]
+      }
+    },
+    "confidence": 0.8083,
+    "processing_time_sec": 7.325,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019755787_1_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          810,
+          1319,
+          1022,
+          1531
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 6.915,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019756316_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          8,
+          1460,
+          151,
+          1548
+        ]
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.8117,
+    "processing_time_sec": 8.766,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019757162_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "MAYFAIR INNOVATION",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7908,
+    "processing_time_sec": 7.208,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019767539_1_v1_pg1",
+    "fields": {
+      "dealer_name": "Maan Tractor Co",
+      "model_name": "Powertrac Euro G28",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          1109,
+          1722,
+          1147,
+          1839
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          430,
+          1350,
+          846,
+          1766
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 7.324,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019780900_1_v1_pg1",
+    "fields": {
+      "dealer_name": "SHRIRAM TRACTOR",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 55,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          171,
+          937,
+          281,
+          1019
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          815,
+          1167,
+          1077,
+          1429
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 6.943,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019804134_4_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": true,
+        "bbox": [
+          129,
+          1119,
+          253,
+          1224
+        ]
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          880,
+          1378,
+          1096,
+          1594
+        ]
+      }
+    },
+    "confidence": 0.8442,
+    "processing_time_sec": 7.227,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019805709_1_v1_pg1",
+    "fields": {
+      "dealer_name": "MK Motors",
+      "model_name": "SONALIKA INTERNATIONAL TRACTORS",
+      "horse_power": 50,
+      "asset_cost": 850000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          857,
+          1226,
+          1073,
+          1442
+        ]
+      }
+    },
+    "confidence": 0.8067,
+    "processing_time_sec": 7.183,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "90019864562_OTHERS_v1_pg1",
+    "fields": {
+      "dealer_name": "AMS Tractors",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": true,
+        "bbox": [
+          532,
+          852,
+          1016,
+          1336
+        ]
+      }
+    },
+    "confidence": 0.8233,
+    "processing_time_sec": 7.08,
+    "cost_estimate_usd": 0.0
+  },
+  {
+    "doc_id": "172427893_3_pg11",
+    "fields": {
+      "dealer_name": "Odisha Agro Industries Corporation",
+      "model_name": "Swaraj 742 XT",
+      "horse_power": 45,
+      "asset_cost": 700000,
+      "signature": {
+        "present": false,
+        "bbox": null
+      },
+      "stamp": {
+        "present": false,
+        "bbox": null
+      }
+    },
+    "confidence": 0.7908,
     "processing_time_sec": 33.521,
     "cost_estimate_usd": 0.0
   },

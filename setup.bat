@@ -32,7 +32,7 @@ REM For CPU only:
 pip install torch torchvision --quiet
 
 echo [5/5] Installing requirements...
-pip install -r requirements.txt --quiet
+pip install -r requirements.txt 
 
 echo.
 echo ==========================================
