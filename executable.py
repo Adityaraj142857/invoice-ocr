@@ -131,14 +131,28 @@ def build_pipeline_components(cfg: dict) -> dict:
 
     # ── Detection ─────────────────────────────────────────────────────────
     stamp_cfg = StampDetectorConfig(
-        search_region_fraction=_get(cfg, "detection", "stamp", "search_region_fraction", default=0.55),
-        min_contour_area=_get(cfg, "detection", "stamp", "min_contour_area", default=2000),
-        min_ink_density=_get(cfg, "detection", "stamp", "min_ink_density", default=0.08),
+        search_region_fraction=_get(cfg, "detection", "stamp",
+                                    "search_region_fraction", default=0.50),
+        min_contour_area=_get(cfg, "detection", "stamp",
+                              "min_contour_area", default=800),
+        min_ink_density=_get(cfg, "detection", "stamp",
+                             "min_ink_density", default=0.04),
+        hough_param2=_get(cfg, "detection", "stamp",
+                          "hough_param2", default=20),
+        min_strategies_agree=_get(cfg, "detection", "stamp",
+                                  "min_strategies_agree", default=1),
     )
     sig_cfg = SignatureDetectorConfig(
-        search_above_px=_get(cfg, "detection", "signature", "search_above_px", default=180),
-        min_contour_count=_get(cfg, "detection", "signature", "min_contour_count", default=2),
-        fallback_region_fraction=_get(cfg, "detection", "signature", "fallback_region_fraction", default=0.45),
+        search_above_px=_get(cfg, "detection", "signature",
+                             "search_above_px", default=220),
+        search_h_padding=_get(cfg, "detection", "signature",
+                              "search_h_padding", default=100),
+        min_contour_area=_get(cfg, "detection", "signature",
+                              "min_contour_area", default=80),
+        min_stroke_count=_get(cfg, "detection", "signature",
+                              "min_stroke_count", default=2),
+        fallback_region_fraction=_get(cfg, "detection", "signature",
+                                      "fallback_region_fraction", default=0.40),
     )
 
     # ── Master data ───────────────────────────────────────────────────────
