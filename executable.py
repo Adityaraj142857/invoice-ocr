@@ -23,8 +23,6 @@ from pathlib import Path
 # ── Suppress noisy warnings before any heavy imports ──────────────────────
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
-os.environ["FLAGS_call_stack_level"] = "0"
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", message=".*urllib3.*")
@@ -43,8 +41,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 # Silence noisy third-party loggers
-for _lib in ("httpx", "httpcore", "transformers", "huggingface_hub",
-             "ppocr", "paddle", "paddleocr"):
+for _lib in ("httpx", "httpcore", "transformers", "huggingface_hub"):
     logging.getLogger(_lib).setLevel(logging.ERROR)
 
 logger = logging.getLogger("executable")
@@ -64,7 +61,6 @@ from vlm.qwen_extractor import QwenExtractor, QwenExtractorConfig
 from detection.stamp_detector import StampDetectorConfig, detect_stamp
 from detection.signature_detector import SignatureDetectorConfig, detect_signature
 
-from extraction.field_parser import parse_fields
 from extraction.consensus import build_consensus
 from extraction.confidence import compute_confidence
 
@@ -73,7 +69,7 @@ from matching.fuzzy_matcher import match_all_fields
 
 from utils.image_utils import resize_for_model
 from utils.device_utils import (
-    ocr_should_run, resolve_device, resolve_dtype, print_system_info
+    resolve_device, resolve_dtype, print_system_info
 )
 from utils.json_utils import (
     build_output_json, doc_id_from_path,
@@ -163,22 +159,12 @@ def build_pipeline_components(cfg: dict) -> dict:
     master_dir = _ROOT / _get(cfg, "matching", "master_dir", default="master_data")
     master_data = MasterData(master_dir=master_dir)
 
-    # ── OCR — platform aware ──────────────────────────────────────────────
-    ocr_enabled_cfg = str(_get(cfg, "ocr", "enabled", default="auto")).lower()
-    ocr_enabled = ocr_should_run(ocr_enabled_cfg)
-
-    ocr_langs = tuple(_get(cfg, "ocr", "multi_lang", default=["en", "hi"]))
-    ocr_conf  = _get(cfg, "ocr", "confidence_threshold", default=0.3)
-
     return {
         "pre_cfg":          pre_cfg,
         "vlm_extractor":    vlm_extractor,
         "stamp_cfg":        stamp_cfg,
         "sig_cfg":          sig_cfg,
         "master_data":      master_data,
-        "ocr_enabled":      ocr_enabled,
-        "ocr_langs":        ocr_langs,
-        "ocr_conf":         ocr_conf,
         "dealer_threshold": _get(cfg, "matching", "dealer_threshold", default=80.0),
         "model_threshold":  _get(cfg, "matching", "model_threshold", default=85.0),
     }
@@ -215,27 +201,12 @@ def process_document(file_path: Path, components: dict) -> dict:
         rgb_image = page
         gray_image = None
 
-    # ── 3. OCR (platform-aware) ───────────────────────────────────────────
+    # ── 3. OCR: skipped — VLM-only mode ──────────────────────────────────
+    logger.info("  OCR: skipped (VLM-only mode)")
     ocr_result = None
-    if components["ocr_enabled"]:
-        try:
-            from ocr.paddle_ocr import run_ocr_multi_lang
-            ocr_image = gray_image if gray_image is not None else rgb_image
-            ocr_result = run_ocr_multi_lang(
-                ocr_image,
-                langs=components["ocr_langs"],
-                confidence_threshold=components["ocr_conf"],
-            )
-            logger.info("  OCR: %d blocks, lang=%s",
-                        len(ocr_result.blocks), ocr_result.language_hint)
-        except Exception as exc:
-            logger.error("  OCR failed: %s", exc)
-            ocr_result = None
-    else:
-        logger.info("  OCR: skipped (VLM-only mode on this platform)")
 
     # ── 4. VLM extraction ─────────────────────────────────────────────────
-    vlm_image = resize_for_model(rgb_image, max_dim=1024)
+    vlm_image = resize_for_model(rgb_image, max_dim=560)
     vlm_result = None
     try:
         vlm_result = components["vlm_extractor"].extract(vlm_image)
@@ -254,22 +225,9 @@ def process_document(file_path: Path, components: dict) -> dict:
     except Exception as exc:
         logger.error("  Detection failed: %s", exc)
 
-    # ── 6. Field parsing from OCR ─────────────────────────────────────────
-    parsed = None
-    if ocr_result:
-        try:
-            parsed = parse_fields(ocr_result)
-        except Exception as exc:
-            logger.warning("  Field parsing failed: %s", exc)
+    # ── 6. Field parsing from OCR — skipped (VLM-only mode) ──────────────
 
-    # ── 7. Consensus ──────────────────────────────────────────────────────
-    ocr_fields = parsed.to_dict() if parsed else {}
-    ocr_conf   = {
-        "dealer_name": parsed.dealer_conf if parsed else 0.0,
-        "model_name":  parsed.model_conf  if parsed else 0.0,
-        "horse_power": parsed.hp_conf     if parsed else 0.0,
-        "asset_cost":  parsed.cost_conf   if parsed else 0.0,
-    }
+    # ── 7. Consensus — VLM fields only ───────────────────────────────────
     vlm_fields = vlm_result.to_dict() if vlm_result else {}
     vlm_conf   = {k: 0.75 for k in vlm_fields}
 
@@ -285,7 +243,7 @@ def process_document(file_path: Path, components: dict) -> dict:
     consensus = None
     try:
         consensus = build_consensus(
-            ocr_fields=ocr_fields, ocr_confidences=ocr_conf,
+            ocr_fields={}, ocr_confidences={},
             vlm_fields=vlm_fields, vlm_confidences=vlm_conf,
             detection_fields=det_fields, detection_confidences=det_conf,
         )
